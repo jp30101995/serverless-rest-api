@@ -117,10 +117,10 @@ module.exports.getAllQue = (event, context, callback) => {
 
   connectToDatabase()
     .then(() => {
-      // let fetchNumber = 2
+      let fetchNumber = parseInt(event.pathParameters.total)
       // let n = Question.count() - fetchNumber
       // let r = Math.floor(Math.random() * n);
-      Question.aggregate([{$sample: {size:2}}])
+      Question.aggregate([{$sample: {size:fetchNumber}}, {$project:{ question: 1, questiontype: 1, difficulty:1, options:1, subject:1, answer:'' } }])
       //Question.find().limit(fetchNumber).skip(r)
         .then(ques => callback(null, {
           statusCode: 200,
@@ -239,3 +239,22 @@ module.exports.Result = (event, context, callback) => {
 //         }));
 //     });
 // };
+
+module.exports.truncateQuestion = (event, context, callback) => {
+  context.callbackWaitsForEmptyEventLoop = false;
+
+  connectToDatabase()
+    .then(() => {
+      Question.remove({})
+        .then(note => callback(null, {
+          statusCode: 200,
+          body: JSON.stringify({ message: 'Removed all Questions' })
+        }))
+        .catch(err => callback(null, {
+          statusCode: err.statusCode || 500,
+          headers: { 'Content-Type': 'text/plain' },
+          body: 'Could not fetch the notes.'
+        }));
+    });
+};
+
