@@ -120,7 +120,16 @@ module.exports.getAllQue = (event, context, callback) => {
       let fetchNumber = parseInt(event.pathParameters.total)
       // let n = Question.count() - fetchNumber
       // let r = Math.floor(Math.random() * n);
-      Question.aggregate([{$sample: {size:fetchNumber}}, {$project:{ question: 1, questiontype: 1, difficulty:1, options:1, subject:1, answer:'' } }])
+      Question.aggregate([
+        { $match: { subject: { $eq: event.pathParameters.subject } } },
+        {
+          $sample: {size:fetchNumber}
+        }, 
+        {
+          $project: { question: 1, questiontype: 1, difficulty:1, options:1, subject:1, answer:'' } 
+        }
+        
+      ])
       //Question.find().limit(fetchNumber).skip(r)
         .then(ques => callback(null, {
           statusCode: 200,

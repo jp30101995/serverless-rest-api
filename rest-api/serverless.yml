@@ -56,7 +56,7 @@ functions: # add 4 functions for CRUD
     handler: handler.getAllQue # path will be domain.name.com/dev/notes
     events:
      - http:
-         path: questions/{total}
+         path: questions/{total}/{subject}
          method: get
          cors: true
   getAns:
