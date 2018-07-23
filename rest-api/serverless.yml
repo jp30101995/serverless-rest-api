@@ -31,6 +31,20 @@ functions: # add 4 functions for CRUD
           path: answers # path will be domain.name.com/dev/notes
           method: post
           cors: true 
+  createTest:
+    handler: handler.createTest # point to exported create function in handler.js
+    events:
+      - http:
+          path: test # path will be domain.name.com/dev/notes
+          method: post
+          cors: true 
+  createStudent:
+    handler: handler.createStudent # point to exported create function in handler.js
+    events:
+      - http:
+          path: student # path will be domain.name.com/dev/notes
+          method: post
+          cors: true 
   # createOption:
   #   handler: handler.createOption # point to exported create function in handler.js
   #   events:
@@ -56,7 +70,7 @@ functions: # add 4 functions for CRUD
     handler: handler.getAllQue # path will be domain.name.com/dev/notes
     events:
      - http:
-         path: questions/{total}/{subject}
+         path: questions/{total}/{subject}/{difficulty}/{learnerID}
          method: get
          cors: true
   getAns:
@@ -65,12 +79,19 @@ functions: # add 4 functions for CRUD
       - http:
           path: ans/{id} # path will be domain.name.com/dev/notes/1
           method: get
+          cors: true        
+  getAllAns:
+    handler: handler.getAllAns
+    events:
+      - http:
+          path: ans # path will be domain.name.com/dev/notes/1
+          method: get
           cors: true         
   Result:
     handler: handler.Result
     events:
       - http:
-          path: result # path will be domain.name.com/dev/notes/1
+          path: result/{learnerID}/{difficulty} # path will be domain.name.com/dev/notes/1
           method: post
           cors: true 
   # update:
@@ -87,6 +108,12 @@ functions: # add 4 functions for CRUD
          path: questions # path will be domain.name.com/dev/notes/1
          method: delete
          cors: true
-
+  truncateAnswer:
+    handler: handler.truncateAnswer
+    events:
+     - http:
+         path: answers # path will be domain.name.com/dev/notes/1
+         method: delete
+         cors: true
 plugins:
   - serverless-offline
