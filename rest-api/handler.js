@@ -5,23 +5,7 @@ const connectToDatabase = require('./db');
 var Question = require('./models/Question');
 var Answer = require('./models/Answer');
 var Student = require('./models/Student');
-// module.exports.create = (event, context, callback) => {
-//   context.callbackWaitsForEmptyEventLoop = false;
 
-//   connectToDatabase()
-//     .then(() => {
-//       Note.create(JSON.parse(event.body))
-//         .then(note => callback(null, {
-//           statusCode: 200,
-//           body: JSON.stringify(note)
-//         }))
-//         .catch(err => callback(null, {
-//           statusCode: err.statusCode || 500,
-//           headers: { 'Content-Type': 'text/plain' },
-//           body: 'Could not create the note.'
-//         }));
-//     });
-// };
 
 module.exports.createQue = (event, context, callback) => {
   context.callbackWaitsForEmptyEventLoop = false;
@@ -94,23 +78,6 @@ module.exports.createStudent = (event, context, callback) => {
         }));
     });
 };
-// module.exports.createOption = (event, context, callback) => {
-//   context.callbackWaitsForEmptyEventLoop = false;
-
-//   connectToDatabase()
-//     .then(() => {
-//       Option.create(JSON.parse(event.body))
-//         .then(opt => callback(null, {
-//           statusCode: 200,
-//           body: JSON.stringify(opt)
-//         }))
-//         .catch(err => callback(null, {
-//           statusCode: err.statusCode || 500,
-//           headers: { 'Content-Type': 'text/plain' },
-//           body: err
-//         }));
-//     });
-// };
 
 // module.exports.getOne = (event, context, callback) => {
 //   context.callbackWaitsForEmptyEventLoop = false;
@@ -130,23 +97,6 @@ module.exports.createStudent = (event, context, callback) => {
 //     });
 // };
 
-// module.exports.getAll = (event, context, callback) => {
-//   context.callbackWaitsForEmptyEventLoop = false;
-
-//   connectToDatabase()
-//     .then(() => {
-//       Note.find()
-//         .then(notes => callback(null, {
-//           statusCode: 200,
-//           body: JSON.stringify(notes)
-//         }))
-//         .catch(err => callback(null, {
-//           statusCode: err.statusCode || 500,
-//           headers: { 'Content-Type': 'text/plain' },
-//           body: 'Could not fetch the notes.'
-//         }))
-//     });
-// };
 
 module.exports.getAllQue = (event, context, callback) => {
   context.callbackWaitsForEmptyEventLoop = false;
@@ -253,9 +203,10 @@ module.exports.Result = (event, context, callback) => {
 
   var totMarks = 0;
   var ids = [];
+  var obj = {};
   connectToDatabase()
     .then(() => {
-      var obj = JSON.parse(event.body)
+      obj = JSON.parse(event.body)
       for (var i = 0; i < obj.length; i++) {
         ids.push(obj[i].question);
       }
@@ -268,23 +219,45 @@ module.exports.Result = (event, context, callback) => {
           for(var j=0; j< obj.length; j++){
             if(obj[j].question == ans[i]._id){
               anss = obj[j].answer;
+              obj[j].rightAns = ans[i].answer;
             }
           }
           if(ans[i].questiontype == 'chkbox' || ans[i].questiontype == 'radio'){
+            console.log('before if : '+i)
             if (ans[i].answer.length == anss.length
                 && ans[i].answer.every(function(u, i) {
                     return anss.includes(u);
                 })
               ) {
                 totMarks += 1;
+                for(var j=0; j< obj.length; j++){
+                  if(obj[j].question == ans[i]._id){
+                    console.log('adding totmarks : '+i)
+                    obj[j].totMarks = 1;
+                  }
+                }
+              }else{
+                for(var j=0; j< obj.length; j++){
+                  if(obj[j].question == ans[i]._id){
+                    console.log('adding totmarks : '+i)
+                    obj[j].totMarks = 0;
+                  }
+                }
               }
             }else{
               var answers = anss[0] + '#' + ans[i].answer[0];
               var apiURL="https://21wgg447m7.execute-api.ap-southeast-1.amazonaws.com/dev/questions/2/Maths";
               fetch(apiURL)
                 .then(res => res.json())
-                .then(
-                  totMarks += 1
+                .then(() => {
+                  let similarity = 1
+                  totMarks += similarity
+                  for(var j=0; j< obj.length; j++){
+                    if(obj[j].question == ans[i]._id){
+                      obj[j].totMarks = similarity;
+                    }
+                  }
+                }
                 )
                 .catch(err => callback(null, {
                   statusCode: err.statusCode || 500,
@@ -293,8 +266,6 @@ module.exports.Result = (event, context, callback) => {
                 }));
             }
           }
-
-       
       })
       .then(() => {
         let diff = event.pathParameters.difficulty
@@ -303,18 +274,24 @@ module.exports.Result = (event, context, callback) => {
         Student.find({learnerID: {$eq: learnerId}})
         .then(student => {
           let tot = ids.length;
+          obj.totTestMarks = totMarks;
+          
           if(diff.toLowerCase() == 'medium') student[0].Mmarks.push((totMarks*100)/tot);
           if(diff.toLowerCase() == 'hard') student[0].Hmarks.push((totMarks*100)/tot);
           if(diff.toLowerCase() == 'easy') student[0].Emarks.push((totMarks*100)/tot);
           Student.findByIdAndUpdate(student[0]._id, student[0], { new: true })
           .then(stu => {
+            console.log(obj);
+            let finalAns = {};
+            finalAns.Result = obj;
+            finalAns.Total = obj.totTestMarks;
             callback(null, {
               statusCode: 200,
               headers: {
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Credentials': true,
               },
-              body: JSON.stringify({"response":totMarks})
+              body: JSON.stringify(finalAns)
             })
           })
         })
@@ -330,24 +307,6 @@ module.exports.Result = (event, context, callback) => {
 
 };
 
-
-// module.exports.update = (event, context, callback) => {
-//   context.callbackWaitsForEmptyEventLoop = false;
-
-//   connectToDatabase()
-//     .then(() => {
-//       Note.findByIdAndUpdate(event.pathParameters.id, JSON.parse(event.body), { new: true })
-//         .then(note => callback(null, {
-//           statusCode: 200,
-//           body: JSON.stringify(note)
-//         }))
-//         .catch(err => callback(null, {
-//           statusCode: err.statusCode || 500,
-//           headers: { 'Content-Type': 'text/plain' },
-//           body: 'Could not fetch the notes.'
-//         }));
-//     });
-// };
 
 // module.exports.delete = (event, context, callback) => {
 //   context.callbackWaitsForEmptyEventLoop = false;
